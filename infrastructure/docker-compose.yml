@@ -1,0 +1,183 @@
+version: "3.8"
+
+services:
+  # ============================================================================
+  # PostgreSQL 16 + pgvector
+  # ============================================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: nexusai-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-nexusai}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nexusai}
+      POSTGRES_DB: ${DB_NAME:-nexusai}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-nexusai} -d ${DB_NAME:-nexusai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - nexusai-network
+
+  # ============================================================================
+  # Redis 7
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: nexusai-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - nexusai-network
+
+  # ============================================================================
+  # API Gateway (NestJS)
+  # ============================================================================
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile.dev
+    container_name: nexusai-gateway
+    ports:
+      - "${GATEWAY_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-nexusai}
+      - DB_PASSWORD=${DB_PASSWORD:-nexusai}
+      - DB_NAME=${DB_NAME:-nexusai}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-access-secret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret}
+      - JWT_ACCESS_EXPIRES_IN=${JWT_ACCESS_EXPIRES_IN:-15m}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-7d}
+      - AI_BACKEND_URL=http://ai-backend:8000
+      - CORS_ORIGINS=http://localhost:3000
+      - GATEWAY_PORT=3001
+    volumes:
+      - ./gateway/src:/app/src
+      - ./gateway/package.json:/app/package.json
+      - ./gateway/tsconfig.json:/app/tsconfig.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nexusai-network
+
+  # ============================================================================
+  # AI Backend (FastAPI)
+  # ============================================================================
+  ai-backend:
+    build:
+      context: ./ai-backend
+      dockerfile: Dockerfile.dev
+    container_name: nexusai-ai-backend
+    ports:
+      - "${AI_BACKEND_PORT:-8000}:8000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-nexusai}
+      - DB_PASSWORD=${DB_PASSWORD:-nexusai}
+      - DB_NAME=${DB_NAME:-nexusai}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-access-secret}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-small}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+    volumes:
+      - ./ai-backend/app:/app/app
+      - ./ai-backend/pyproject.toml:/app/pyproject.toml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nexusai-network
+
+  # ============================================================================
+  # Celery Worker
+  # ============================================================================
+  celery-worker:
+    build:
+      context: ./ai-backend
+      dockerfile: Dockerfile.dev
+    container_name: nexusai-celery-worker
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-nexusai}
+      - DB_PASSWORD=${DB_PASSWORD:-nexusai}
+      - DB_NAME=${DB_NAME:-nexusai}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./ai-backend/app:/app/app
+      - ./ai-backend/pyproject.toml:/app/pyproject.toml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - nexusai-network
+
+  # ============================================================================
+  # Frontend (Next.js)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: nexusai-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+      - NEXT_PUBLIC_WS_URL=ws://localhost:3001/ws
+      - NEXT_PUBLIC_APP_NAME=Nexus AI
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/package.json:/app/package.json
+      - ./frontend/next.config.js:/app/next.config.js
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./frontend/tailwind.config.ts:/app/tailwind.config.ts
+      - ./frontend/postcss.config.js:/app/postcss.config.js
+    depends_on:
+      - gateway
+    networks:
+      - nexusai-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  nexusai-network:
+    driver: bridge

@@ -1,0 +1,24 @@
+{
+  "name": "nexus-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise AI Knowledge & Agent Platform",
+  "workspaces": [
+    "frontend",
+    "gateway"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:gateway\"",
+    "dev:frontend": "npm -w frontend run dev",
+    "dev:gateway": "npm -w gateway run start:dev",
+    "build": "npm -w frontend run build && npm -w gateway run build",
+    "lint": "npm -w frontend run lint && npm -w gateway run lint",
+    "test": "npm -w frontend run test && npm -w gateway run test",
+    "type-check": "npm -w frontend run type-check && npm -w gateway run type-check",
+    "clean": "npm -w frontend run clean && npm -w gateway run clean"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.3.0"
+  }
+}
