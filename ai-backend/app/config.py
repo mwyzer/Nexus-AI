@@ -51,9 +51,9 @@ class Settings(BaseSettings):
 
     # LLM
     openai_api_key: str = ""
-    llm_provider: str = "openai"
-    llm_model: str = "gpt-4o"
-    embedding_model: str = "text-embedding-3-small"
+    llm_provider: str = "ollama"
+    llm_model: str = "llama3.2"
+    embedding_model: str = "bge-m3"
     ollama_url: str = "http://localhost:11434"
 
     # Celery

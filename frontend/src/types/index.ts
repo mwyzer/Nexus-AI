@@ -48,3 +48,67 @@ export interface PaginatedResponse<T> {
   items: T[];
   meta: PaginationMeta;
 }
+
+export interface KnowledgeBase {
+  id: string;
+  name: string;
+  description: string | null;
+  ownerId: string | null;
+  embeddingModel: string;
+  chunkSize: number;
+  chunkOverlap: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type DocumentStatus = 'pending' | 'processing' | 'ready' | 'error';
+
+export interface KnowledgeDocument {
+  id: string;
+  knowledgeBaseId: string;
+  filename: string;
+  mimeType: string | null;
+  fileSize: number | null;
+  status: DocumentStatus;
+  errorMessage: string | null;
+  docMetadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentUploadResponse {
+  document: KnowledgeDocument;
+  taskId: string;
+}
+
+export type SearchType = 'semantic' | 'keyword' | 'hybrid';
+
+export interface SearchResultItem {
+  chunkId: string;
+  documentId: string;
+  filename: string;
+  content: string;
+  chunkIndex: number;
+  score: number;
+}
+
+export interface SearchResponse {
+  results: SearchResultItem[];
+  query: string;
+  searchType: string;
+}
+
+export interface Citation {
+  documentId: string;
+  filename: string;
+  chunkIndex: number;
+  textSnippet: string;
+  relevanceScore: number;
+}
+
+export interface RagGenerateResponse {
+  answer: string;
+  citations: Citation[];
+  confidence: number;
+  processingTimeMs: number;
+}

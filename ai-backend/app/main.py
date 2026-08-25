@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from . import models  # noqa: F401 - populates Base.metadata as a side effect
 from .config import settings
 from .api.v1.router import api_router
 

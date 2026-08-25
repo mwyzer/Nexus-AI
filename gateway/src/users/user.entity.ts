@@ -26,7 +26,7 @@ export class User {
   @Column('simple-array', { default: 'user' })
   roles!: string[];
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   refreshTokenHash!: string | null;
 
   @CreateDateColumn()

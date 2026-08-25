@@ -62,3 +62,12 @@ export async function patch<T>(url: string, body?: unknown) {
 export async function del(url: string) {
   await apiClient.delete(url);
 }
+
+export async function postForm<T>(url: string, formData: FormData) {
+  const { data } = await apiClient.post<{ success: boolean; data: T }>(url, formData, {
+    // Let the browser set the multipart boundary; the instance default of
+    // 'application/json' would otherwise take precedence and break the upload.
+    headers: { 'Content-Type': undefined },
+  });
+  return data.data;
+}

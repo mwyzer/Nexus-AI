@@ -98,9 +98,11 @@ nexus-ai/
 ```bash
 # Clone and enter the project
 git clone <repo-url> nexus-ai && cd nexus-ai
+cp .env.example .env  # then fill in real values
 
-# Start all services
-docker compose up -d
+# Start all services (--env-file is required: docker-compose.yml lives in
+# infrastructure/, so Compose's project directory defaults there, not repo root)
+cd infrastructure && docker compose --env-file ../.env up -d --build
 
 # Frontend
 cd frontend && npm install && npm run dev
