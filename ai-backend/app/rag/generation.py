@@ -1,15 +1,14 @@
 import time
 
-import httpx
-from langchain_openai import ChatOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..config import settings
+from ..core.llm import LLMCompletionError as LLMGenerationError
+from ..core.llm import complete as _complete
 from ..models.knowledge_base import KnowledgeBase
 from ..schemas.chunk import SearchResult
 from ..schemas.rag import Citation, RAGQuery, RAGResponse
 from . import vector_store
-from .embedding import get_embedder
+from .embedding import get_embedder, infer_embedding_provider
 
 PROMPT_TEMPLATE = """You are an AI assistant with access to a knowledge base.
 Answer the user's question based on the provided context.
@@ -29,43 +28,8 @@ Instructions:
 NO_CONTEXT_ANSWER = "I don't have relevant information in the knowledge base to answer that."
 
 
-class LLMGenerationError(Exception):
-    """Raised when the configured LLM provider fails to produce a completion."""
-
-
-def _infer_embedding_provider(model: str) -> str:
-    return "openai" if model.startswith("text-embedding") else "ollama"
-
-
 def _build_context(results: list[SearchResult]) -> str:
     return "\n\n".join(f"[{i + 1}] {r.content}" for i, r in enumerate(results))
-
-
-async def _complete_openai(prompt: str) -> str:
-    llm = ChatOpenAI(model=settings.llm_model, api_key=settings.openai_api_key, temperature=0.2)
-    response = await llm.ainvoke(prompt)
-    return str(response.content)
-
-
-async def _complete_ollama(prompt: str) -> str:
-    async with httpx.AsyncClient(base_url=settings.ollama_url, timeout=120.0) as client:
-        response = await client.post(
-            "/api/generate",
-            json={"model": settings.llm_model, "prompt": prompt, "stream": False},
-        )
-        response.raise_for_status()
-        return response.json()["response"]
-
-
-async def _complete(prompt: str) -> str:
-    try:
-        if settings.llm_provider == "ollama":
-            return await _complete_ollama(prompt)
-        return await _complete_openai(prompt)
-    except httpx.HTTPError as exc:
-        raise LLMGenerationError(f"Ollama request failed: {exc}") from exc
-    except Exception as exc:  # noqa: BLE001 - normalize any provider SDK error
-        raise LLMGenerationError(f"LLM completion failed: {exc}") from exc
 
 
 async def generate_answer(session: AsyncSession, query: RAGQuery) -> RAGResponse:
@@ -75,7 +39,7 @@ async def generate_answer(session: AsyncSession, query: RAGQuery) -> RAGResponse
     if kb is None:
         raise ValueError("Knowledge base not found")
 
-    provider = _infer_embedding_provider(kb.embedding_model)
+    provider = infer_embedding_provider(kb.embedding_model)
     embedder = get_embedder(provider, kb.embedding_model)
     query_embedding = (await embedder.embed([query.question]))[0]
 

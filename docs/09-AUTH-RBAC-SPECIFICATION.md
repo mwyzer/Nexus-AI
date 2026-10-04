@@ -103,7 +103,7 @@ export class KnowledgeBaseController {
 | `admin`   | Full system access, user management            |
 | `editor`  | Create/edit knowledge bases, agents, tools     |
 | `viewer`  | Read-only access to assigned resources         |
-| `api`     | Programmatic access with API keys              |
+| `api`     | Programmatic access with API keys             | *planned* |
 
 ## Default Permissions
 

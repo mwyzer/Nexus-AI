@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "_example-stdio": {
+      "transport": "stdio",
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "<image>"],
+      "env": {},
+      "enabled": false
+    },
+    "_example-sse": {
+      "transport": "sse",
+      "url": "<https://mcp-server-host/sse>",
+      "jwt_token": "${EXTERNAL_MCP_JWT_TOKEN}",
+      "enabled": false
+    }
+  }
+}

@@ -43,3 +43,7 @@ def get_embedder(provider: str, model: str) -> Embedder:
     if provider == "ollama":
         return OllamaEmbedder(model=model)
     raise ValueError(f"Unknown embedding provider: {provider}")
+
+
+def infer_embedding_provider(model: str) -> str:
+    return "openai" if model.startswith("text-embedding") else "ollama"

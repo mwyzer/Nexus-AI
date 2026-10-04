@@ -20,7 +20,7 @@
 - Markdown (.md)
 - Plain text (.txt)
 - HTML
-- CSV / JSON (structured data)
+- CSV / JSON (structured data) — *planned*
 
 ### Ingestion Pipeline
 
@@ -68,6 +68,8 @@ class ChunkConfig(BaseModel):
 | text-embedding-3-large | 3072       | OpenAI   |
 | bge-large-en-v1.5      | 1024       | Local    |
 | mxbai-embed-large      | 1024       | Local    |
+
+> **Note:** the `chunk_embeddings.embedding` column is currently fixed at `vector(1536)` (see docs/04). Models with non-1536 dimensions (e.g. local 1024-dim) require adapting the vector column to their dimension.
 
 ## Vector Store (pgvector)
 

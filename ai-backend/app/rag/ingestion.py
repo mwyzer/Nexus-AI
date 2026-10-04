@@ -5,14 +5,10 @@ from ..models.knowledge_base import KnowledgeBase
 from ..schemas.chunk import ChunkConfig
 from . import vector_store
 from .chunking import get_chunker
-from .embedding import get_embedder
+from .embedding import get_embedder, infer_embedding_provider
 from .parsing import UnsupportedFormatError, parse_document
 
 MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024  # 20MB, enforced at the API boundary too
-
-
-def _infer_embedding_provider(model: str) -> str:
-    return "openai" if model.startswith("text-embedding") else "ollama"
 
 
 class IngestionError(Exception):
@@ -44,7 +40,7 @@ async def ingest_document(session: AsyncSession, document: Document, raw: bytes)
         if not chunks:
             raise IngestionError("Chunking produced no chunks")
 
-        provider = _infer_embedding_provider(kb.embedding_model)
+        provider = infer_embedding_provider(kb.embedding_model)
         embedder = get_embedder(provider, kb.embedding_model)
         embeddings = await embedder.embed([c.content for c in chunks])
 

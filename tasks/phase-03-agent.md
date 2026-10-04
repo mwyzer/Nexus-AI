@@ -12,23 +12,23 @@ Build the autonomous agent runtime using LangGraph with tool calling, conversati
 ## Tasks
 
 ### 3.1 — Agent Runtime (LangGraph)
-- [ ] Implement AgentState type definition
-- [ ] Build Plan → Execute → Evaluate → Synthesize graph
-- [ ] Implement conditional routing in graph
-- [ ] Add max iterations and timeout safeguards
-- [ ] Implement agent cancellation
-- [ ] Add streaming support for agent steps
+- [x] Implement AgentState type definition — `app/agents/state.py`
+- [x] Build Plan → Execute → Evaluate → Synthesize graph — `app/agents/graph.py` (no tool calling wired in yet, see 3.2)
+- [x] Implement conditional routing in graph — `route_after_plan`/`route_after_evaluate` in `app/agents/nodes.py`
+- [x] Add max iterations and timeout safeguards — `settings.agent_max_iterations`/`agent_timeout_seconds`, enforced in `app/agents/nodes.py` and `app/agents/runner.py`
+- [x] Implement agent cancellation — `cancel_event` checked between steps in `app/agents/runner.py`
+- [x] Add streaming support for agent steps — `stream_agent()` via `graph.astream()` in `app/agents/runner.py`
 
 ### 3.2 — Tool Calling Framework
-- [ ] Create base Tool class with schema validation
-- [ ] Implement ToolRegistry for tool management
-- [ ] Create built-in tools:
-  - [ ] Knowledge base search tool
-  - [ ] Calculator tool
-  - [ ] Web search tool (optional)
-  - [ ] Code executor tool (sandboxed)
-- [ ] Implement tool result formatting
-- [ ] Add tool call logging
+- [x] Create base Tool class with schema validation — `app/agents/tools/base.py` (pydantic `args_schema`)
+- [x] Implement ToolRegistry for tool management — `app/agents/tools/registry.py`
+- [x] Create built-in tools:
+  - [x] Knowledge base search tool — `app/agents/tools/knowledge_base.py` (wraps existing RAG hybrid search)
+  - [x] Calculator tool — `app/agents/tools/calculator.py` (AST-based, no `eval()` — rejects anything non-arithmetic)
+  - [ ] Web search tool (optional) — skipped, no search API/key configured
+  - [ ] Code executor tool (sandboxed) — skipped, no sandbox infra exists; shipping an unsandboxed executor would be unsafe
+- [x] Implement tool result formatting — consistent `[tool] result` / `[tool error] message` strings from `execute_node`
+- [x] Add tool call logging — `ToolRegistry.execute()` logs name/args/duration/status
 
 ### 3.3 — Conversation Memory
 - [ ] Implement BufferMemory (sliding window)
@@ -68,12 +68,12 @@ Build the autonomous agent runtime using LangGraph with tool calling, conversati
 - [ ] Agent template gallery
 
 ### 3.8 — Testing
-- [ ] Unit tests for graph nodes
-- [ ] Integration tests for agent execution
-- [ ] Test tool calling with mock tools
-- [ ] Test memory management
-- [ ] Test error recovery
-- [ ] Test cancellation
+- [x] Unit tests for graph nodes — `tests/test_agent_graph.py`, `tests/test_agent_tools.py`
+- [ ] Integration tests for agent execution — only exercised against a fake LLM so far, not a real provider
+- [x] Test tool calling with mock tools — `tests/test_agent_tools.py` (directive parsing, registry, calculator, tool-error path)
+- [ ] Test memory management — no memory exists yet (3.3)
+- [ ] Test error recovery — no retry/recovery path exists yet if `complete()` raises mid-graph
+- [x] Test cancellation — `tests/test_agent_graph.py::test_run_agent_raises_on_cancellation`
 
 ## Acceptance Criteria
 

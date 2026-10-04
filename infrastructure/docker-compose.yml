@@ -119,9 +119,11 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - CORS_ORIGINS=["http://localhost:3000","http://localhost:3001"]
+      - MCP_SERVERS_CONFIG=/app/mcp.json
     volumes:
       - ../ai-backend/app:/app/app
       - ../ai-backend/pyproject.toml:/app/pyproject.toml
+      - ../ai-backend/mcp.json:/app/mcp.json
     depends_on:
       postgres:
         condition: service_healthy

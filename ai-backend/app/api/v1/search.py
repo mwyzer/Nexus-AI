@@ -5,14 +5,10 @@ from ...core.database import get_db
 from ...core.security import get_current_user
 from ...models.knowledge_base import KnowledgeBase
 from ...rag import vector_store
-from ...rag.embedding import get_embedder
+from ...rag.embedding import get_embedder, infer_embedding_provider
 from ...schemas.chunk import SearchQuery, SearchResponse
 
 router = APIRouter()
-
-
-def _infer_embedding_provider(model: str) -> str:
-    return "openai" if model.startswith("text-embedding") else "ollama"
 
 
 @router.post("", response_model=SearchResponse)
@@ -25,7 +21,7 @@ async def search(
     if query.search_type in ("semantic", "hybrid"):
         kb = await db.get(KnowledgeBase, query.knowledge_base_id)
         if kb is not None:
-            provider = _infer_embedding_provider(kb.embedding_model)
+            provider = infer_embedding_provider(kb.embedding_model)
             embedder = get_embedder(provider, kb.embedding_model)
             query_embedding = (await embedder.embed([query.query]))[0]
 

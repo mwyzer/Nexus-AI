@@ -85,6 +85,7 @@ async def keyword_search(
     knowledge_base_id: UUID,
     query: str,
     top_k: int,
+    score_threshold: float = 0.0,
 ) -> list[SearchResult]:
     tsquery = func.plainto_tsquery("english", query)
     tsvector = func.to_tsvector("english", ChunkModel.content)
@@ -114,6 +115,7 @@ async def keyword_search(
             score=float(r.score),
         )
         for r in rows
+        if float(r.score) >= score_threshold
     ]
 
 
@@ -131,9 +133,12 @@ async def hybrid_search(
     query_embedding: list[float],
     top_k: int,
     hybrid_weight: float,
+    score_threshold: float = 0.0,
 ) -> list[SearchResult]:
     """Combine normalized semantic and keyword scores with a configurable weight."""
     candidate_k = max(top_k * 4, 20)
+    # Candidates are gathered unfiltered — score_threshold applies to the
+    # final blended score below, not to either component on its own.
     semantic_results = await semantic_search(session, knowledge_base_id, query_embedding, candidate_k)
     keyword_results = await keyword_search(session, knowledge_base_id, query, candidate_k)
 
@@ -149,7 +154,8 @@ async def hybrid_search(
         score = hybrid_weight * semantic_scores.get(chunk_id, 0.0) + (
             1 - hybrid_weight
         ) * keyword_scores.get(chunk_id, 0.0)
-        combined.append(result.model_copy(update={"score": score}))
+        if score >= score_threshold:
+            combined.append(result.model_copy(update={"score": score}))
 
     combined.sort(key=lambda r: r.score, reverse=True)
     return combined[:top_k]
@@ -170,9 +176,11 @@ async def search(
             raise ValueError("query_embedding is required for semantic search")
         return await semantic_search(session, knowledge_base_id, query_embedding, top_k, score_threshold)
     if search_type == "keyword":
-        return await keyword_search(session, knowledge_base_id, query, top_k)
+        return await keyword_search(session, knowledge_base_id, query, top_k, score_threshold)
     if search_type == "hybrid":
         if query_embedding is None:
             raise ValueError("query_embedding is required for hybrid search")
-        return await hybrid_search(session, knowledge_base_id, query, query_embedding, top_k, hybrid_weight)
+        return await hybrid_search(
+            session, knowledge_base_id, query, query_embedding, top_k, hybrid_weight, score_threshold
+        )
     raise ValueError(f"Unknown search type: {search_type}")

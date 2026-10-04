@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { apiClient, post } from '@/lib/api';
+import { apiClient, get as apiGet, post } from '@/lib/api';
 import type { User, AuthTokens, LoginRequest, RegisterRequest } from '@/types';
 
 interface AuthState {
@@ -82,7 +82,7 @@ export const useAuthStore = create<AuthState>()(
 
       fetchUser: async () => {
         try {
-          const user = await post<User>('/auth/me');
+          const user = await apiGet<User>('/auth/me');
           set({ user });
         } catch {
           get().logout();

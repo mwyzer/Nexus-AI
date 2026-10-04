@@ -20,7 +20,7 @@ POST   /api/v1/auth/logout
 GET    /api/v1/auth/me
 ```
 
-### Users (Admin)
+### Users (Admin) — *planned (Phase 05)*
 
 ```
 GET    /api/v1/users
@@ -38,11 +38,30 @@ POST   /api/v1/knowledge-bases
 GET    /api/v1/knowledge-bases/:id
 PATCH  /api/v1/knowledge-bases/:id
 DELETE /api/v1/knowledge-bases/:id
-POST   /api/v1/knowledge-bases/:id/documents
-GET    /api/v1/knowledge-bases/:id/search
 ```
 
-### Agents
+### Documents
+
+```
+POST   /api/v1/documents        multipart form: knowledge_base_id + file
+GET    /api/v1/documents?knowledgeBaseId=:kbId
+GET    /api/v1/documents/:id
+DELETE /api/v1/documents/:id
+```
+
+### Search
+
+```
+POST   /api/v1/search           JSON body: query, knowledge_base_id, search_type, top_k
+```
+
+### Health
+
+```
+GET    /api/v1/health
+```
+
+### Agents — *planned (Phase 03)*
 
 ```
 GET    /api/v1/agents
@@ -53,7 +72,7 @@ DELETE /api/v1/agents/:id
 POST   /api/v1/agents/:id/run
 ```
 
-### Conversations
+### Conversations — *planned (Phase 03)*
 
 ```
 GET    /api/v1/conversations
@@ -63,7 +82,7 @@ POST   /api/v1/conversations/:id/messages
 DELETE /api/v1/conversations/:id
 ```
 
-### MCP
+### MCP — *planned (Phase 04)*
 
 ```
 GET    /api/v1/mcp/servers
@@ -72,7 +91,7 @@ GET    /api/v1/mcp/servers/:id/tools
 POST   /api/v1/mcp/tools/:id/execute
 ```
 
-### Audit & Admin
+### Audit & Admin — *planned (Phase 05)*
 
 ```
 GET    /api/v1/audit-logs
@@ -85,13 +104,13 @@ GET    /api/v1/admin/health
 ### RAG
 
 ```
-POST   /api/v1/rag/ingest
-POST   /api/v1/rag/search
+POST   /api/v1/documents        document upload (multipart) → triggers async ingestion
+DELETE /api/v1/documents/:id
+POST   /api/v1/search
 POST   /api/v1/rag/generate
-DELETE /api/v1/rag/documents/:id
 ```
 
-### Agent
+### Agent — *planned (Phase 03)*
 
 ```
 POST   /api/v1/agent/run
@@ -100,14 +119,14 @@ GET    /api/v1/agent/:id/status
 POST   /api/v1/agent/:id/cancel
 ```
 
-### Embeddings
+### Embeddings — *planned (Phase 02/06)*
 
 ```
 POST   /api/v1/embeddings/generate
 POST   /api/v1/embeddings/batch
 ```
 
-### Evaluation
+### Evaluation — *planned (Phase 06)*
 
 ```
 POST   /api/v1/eval/rag

@@ -12,11 +12,9 @@
 
 ### Password Policy
 
-- Minimum 12 characters
-- Must contain: uppercase, lowercase, number, special character
+- Minimum 8 characters (enforced by gateway DTOs and frontend validation)
+- *Planned hardening:* minimum 12 characters, uppercase/lowercase/number/special, account lockout after 5 failed attempts (15 min), password history (no reuse of last 5)
 - Bcrypt hashing with cost factor 12
-- Account lockout after 5 failed attempts (15 min)
-- Password history: cannot reuse last 5 passwords
 
 ### JWT Security
 

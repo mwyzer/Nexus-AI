@@ -45,10 +45,10 @@ async def evaluate_rag(
         response = await rag_pipeline.query(entry.question)
         
         # 2. Calculate metrics
-        faithfulness = await eval_faithfulness(response.answer, response.context)
+        faithfulness = await eval_faithfulness(response.answer, response.citations)
         relevance = await eval_answer_relevance(entry.question, response.answer)
-        precision = eval_context_precision(response.chunks, entry.relevant_chunk_ids)
-        recall = eval_context_recall(response.chunks, entry.relevant_chunk_ids)
+        precision = eval_context_precision(response.citations, entry.relevant_chunk_ids)
+        recall = eval_context_recall(response.citations, entry.relevant_chunk_ids)
         
         results.append(RAGEvalMetrics(
             faithfulness=faithfulness,
